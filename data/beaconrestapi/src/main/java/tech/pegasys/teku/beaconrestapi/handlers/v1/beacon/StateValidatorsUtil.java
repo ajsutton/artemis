@@ -19,30 +19,42 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.STATUS;
 import io.javalin.http.Context;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.ValidatorSelector;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.beaconrestapi.ListQueryParameterUtils;
 
 public class StateValidatorsUtil {
 
-  public List<ValidatorStatus> parseStatusFilter(final Map<String, List<String>> queryParameters) {
+  public Predicate<ValidatorResponse> parseStatusFilter(
+      final Map<String, List<String>> queryParameters) {
     if (!queryParameters.containsKey(STATUS)) {
-      return List.of();
+      return __ -> true;
     }
 
-    return ListQueryParameterUtils.getParameterAsStringList(queryParameters, STATUS).stream()
-        .map(ValidatorStatus::valueOf)
-        .collect(Collectors.toList());
+    final Set<ValidatorStatus> acceptedStatuses =
+        ListQueryParameterUtils.getParameterAsStringList(queryParameters, STATUS).stream()
+            .map(ValidatorStatus::valueOf)
+            .collect(Collectors.toSet());
+    return validator -> acceptedStatuses.contains(validator.status);
   }
 
-  public List<Integer> parseValidatorsParam(final ChainDataProvider provider, final Context ctx) {
+  public ValidatorSelector parseValidatorsParam(
+      final ChainDataProvider provider, final Context ctx) {
     if (!ctx.queryParamMap().containsKey(PARAM_ID)) {
-      return List.of();
+      // All validators
+      return state -> IntStream.range(0, state.getValidators().size());
     }
-    return ListQueryParameterUtils.getParameterAsStringList(ctx.queryParamMap(), PARAM_ID).stream()
-        .flatMap(
-            validatorParameter -> provider.validatorParameterToIndex(validatorParameter).stream())
-        .collect(Collectors.toList());
+    return state ->
+        ListQueryParameterUtils.getParameterAsStringList(ctx.queryParamMap(), PARAM_ID).stream()
+            .flatMap(
+                validatorParameter ->
+                    provider.validatorParameterToIndex(validatorParameter).stream())
+            .mapToInt(value -> value);
   }
 }

@@ -35,10 +35,12 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.ValidatorSelector;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
@@ -101,10 +103,10 @@ public class GetStateValidators extends AbstractHandler {
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
-    final List<Integer> validatorIndices =
+    final ValidatorSelector validatorIndices =
         stateValidatorsUtil.parseValidatorsParam(chainDataProvider, ctx);
 
-    final List<ValidatorStatus> statusFilter =
+    final Predicate<ValidatorResponse> statusFilter =
         stateValidatorsUtil.parseStatusFilter(ctx.queryParamMap());
 
     final Function<Bytes32, SafeFuture<Optional<List<ValidatorResponse>>>> rootHandler =

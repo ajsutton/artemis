@@ -36,11 +36,11 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.ValidatorSelector;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateRootResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorBalancesResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
@@ -91,14 +91,13 @@ public class GetStateValidatorBalances extends AbstractHandler implements Handle
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
-    final Supplier<List<Integer>> getValidatorIndices =
-        () -> stateValidatorsUtil.parseValidatorsParam(chainDataProvider, ctx);
+    final ValidatorSelector validatorSelector =
+        stateValidatorsUtil.parseValidatorsParam(chainDataProvider, ctx);
 
     final Function<Bytes32, SafeFuture<Optional<List<ValidatorBalanceResponse>>>> rootHandler =
-        (root) ->
-            chainDataProvider.getValidatorsBalancesByStateRoot(root, getValidatorIndices.get());
+        (root) -> chainDataProvider.getValidatorsBalancesByStateRoot(root, validatorSelector);
     final Function<UInt64, SafeFuture<Optional<List<ValidatorBalanceResponse>>>> slotHandler =
-        (slot) -> chainDataProvider.getValidatorsBalancesBySlot(slot, getValidatorIndices.get());
+        (slot) -> chainDataProvider.getValidatorsBalancesBySlot(slot, validatorSelector);
 
     processStateEndpointRequest(
         chainDataProvider, ctx, rootHandler, slotHandler, this::handleResult);
