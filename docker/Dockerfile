@@ -1,10 +1,10 @@
-FROM openjdk:14-slim-buster
+FROM openjdk:15-slim-buster
 
-RUN adduser --disabled-password --gecos "" --home /opt/teku teku && \
-    chown teku:teku /opt/teku
+RUN adduser --disabled-password --gecos "" --home /home/teku teku && mkdir /opt/teku && \
+    chown teku:teku /home/teku /opt/teku
 
 USER teku
-WORKDIR /opt/teku
+WORKDIR /tmp/teku
 
 # copy application (with libraries inside)
 COPY --chown=teku:teku teku /opt/teku/
